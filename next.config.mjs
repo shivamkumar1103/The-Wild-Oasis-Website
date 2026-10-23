@@ -11,6 +11,9 @@ const nextConfig = {
       },
     },
   },
+  images: {
+    qualities: [75, 80, 100],
+  },
 };
 
 export default nextConfig;
