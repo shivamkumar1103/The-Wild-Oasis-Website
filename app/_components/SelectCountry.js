@@ -1,23 +1,28 @@
 import { getCountries } from "@/app/_lib/data-service";
 
-// Let's imagine your colleague already built this component 😃
-
 async function SelectCountry({ defaultCountry, name, id, className }) {
   const rawCountries = await getCountries();
 
-  // Guard against non-array responses (e.g. { data: [...] }, null, or undefined)
-  const countries = Array.isArray(rawCountries)
+  const countriesList = Array.isArray(rawCountries)
     ? rawCountries
     : (rawCountries?.data ?? []);
+
+  // Normalize data to support both v2 (c.name as string) and v3 (c.name.common)
+  const countries = countriesList
+    .map((c) => ({
+      name: typeof c.name === "object" ? c.name.common : c.name,
+      flag: c.flag || c.flags?.svg || c.flags?.png || "",
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const flag =
     countries.find((country) => country.name === defaultCountry)?.flag ?? "";
 
   return (
     <select
+      key={defaultCountry}
       name={name}
       id={id}
-      // Here we use a trick to encode BOTH the country name and the flag into the value. Then we split them up again later in the server action
       defaultValue={`${defaultCountry}%${flag}`}
       className={className}
     >

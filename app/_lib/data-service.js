@@ -137,15 +137,16 @@ export async function getSettings() {
 }
 
 export async function getCountries() {
-  try {
-    const res = await fetch(
-      "https://restcountries.com/v2/all?fields=name,flag",
-    );
-    const countries = await res.json();
-    return countries;
-  } catch {
-    throw new Error("Could not fetch countries");
-  }
+  const res = await fetch("https://flagcdn.com/en/codes.json");
+  const data = await res.json();
+
+  return Object.entries(data)
+    .filter(([code]) => !code.startsWith("us-") && !code.startsWith("gb-"))
+    .map(([code, name]) => ({
+      name,
+      flag: `https://flagcdn.com/${code}.svg`,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /////////////
