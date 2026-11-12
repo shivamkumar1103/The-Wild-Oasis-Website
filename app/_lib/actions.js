@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { supabase } from "@/app/_lib/supabase";
 import { revalidatePath } from "next/cache";
+import { getBookings } from "@/app/_lib/data-service";
 
 export async function updateGuest(formData) {
   const session = await auth.api.getSession({
@@ -30,6 +31,36 @@ export async function updateGuest(formData) {
   if (error) throw new Error("Guest could not be updated");
 
   revalidatePath("/account/profile");
+}
+
+export async function deleteReservation(bookingId) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("User is not authenticated");
+  }
+
+  const bookings = await getBookings(session.user.guestId);
+
+  const bookingToDelete = bookings.find((booking) => booking.id === bookingId);
+
+  if (!bookingToDelete) {
+    throw new Error("Booking not found");
+  }
+
+  const { error } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", bookingId);
+
+  if (error) {
+    console.error(error);
+    throw new Error("Booking could not be deleted");
+  }
+
+  revalidatePath("/account/reservations");
 }
 
 export async function signInAction() {
