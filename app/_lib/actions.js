@@ -63,6 +63,46 @@ export async function deleteReservation(bookingId) {
   revalidatePath("/account/reservations");
 }
 
+export async function updateReservation(bookingId, formData) {
+  bookingId = +bookingId; // Convert bookingId to a number
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("User is not authenticated");
+  }
+
+  const bookings = await getBookings(session.user.guestId);
+
+  const bookingToDelete = bookings.find((booking) => booking.id === bookingId);
+
+  if (!bookingToDelete) {
+    throw new Error("Booking not found");
+  }
+
+  const updatedFields = {
+    numGuests: formData.get("numGuests"),
+    observations: formData.get("observations").slice(0, 1000),
+  };
+
+  const { error } = await supabase
+    .from("bookings")
+    .update(updatedFields)
+    .eq("id", bookingId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    throw new Error("Booking could not be updated");
+  }
+
+  revalidatePath(`/account/reservations/edit/${bookingId}`);
+  revalidatePath("/account/reservations");
+  redirect("/account/reservations");
+}
+
 export async function signInAction() {
   const res = await auth.api.signInSocial({
     body: {
